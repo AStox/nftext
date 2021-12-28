@@ -511,7 +511,7 @@ function App(props) {
             */}
 
             <Contract
-              name="YourContract"
+              name="nftext"
               signer={userSigner}
               provider={localProvider}
               address={address}
