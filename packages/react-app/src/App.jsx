@@ -1,7 +1,7 @@
 import WalletConnectProvider from "@walletconnect/web3-provider";
 //import Torus from "@toruslabs/torus-embed"
 import WalletLink from "walletlink";
-import { Alert, Button, Col, Menu, Row } from "antd";
+import { Alert, Button, Col, Menu, Row, Divider } from "antd";
 import "antd/dist/antd.css";
 import React, { useCallback, useEffect, useState } from "react";
 import { BrowserRouter, Link, Route, Switch } from "react-router-dom";
@@ -443,6 +443,39 @@ function App(props) {
     );
   }
 
+  const [tokensState, setTokensState] = useState([]);
+  const [tokenIds, setTokenIds] = useState([]);
+
+  async function updateTokenState(tokenId) {
+    let rawTokenURI = await readContracts.nftext.tokenURI(parseInt(tokenId._hex));
+    setTokensState(state => [...state, rawTokenURI]);
+  }
+
+  const Svg = i => {
+    const STARTS_WITH = "data:application/json;base64,";
+    const ENDS_WITH = ",text:";
+    if (tokensState.length > i) {
+      const buf = Buffer.from(tokensState[i].slice(STARTS_WITH.length), "base64");
+      let thing = window.atob(buf.toString("base64")).replace(/\s/g, "")
+      let tokenURIJSON = JSON.parse(thing.replace(/\s/g, ""));
+      return <img src={tokenURIJSON.image} />;
+    }
+    return (
+      <svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 350 350">
+        <rect height="16" width="11" fill="#0D141F">
+          <animate
+            attributeName="fill"
+            values="#0D141F;#0D141F;#CE0F5E;#CE0F5E;"
+            keyTimes="0;0.5; 0.501; 1"
+            dur="1s"
+            repeatCount="indefinite"
+            begin={`${Math.random(0, 0.5)}s`}
+          />
+        </rect>
+      </svg>
+    );
+  };
+
   return (
     <div className="App">
       {/* ✏️ Edit the header and change the title to your project name */}
@@ -509,7 +542,21 @@ function App(props) {
                 this <Contract/> component will automatically parse your ABI
                 and give you a form to interact with it locally
             */}
+            <div style={{  padding: '10px 450px'}}>
+            <svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 350 350">
+              <style>
+                {`.base {fill: #deebee}, .border {stroke: #3D4D5A;} .text {fill: #3D4D5A; font-family="Arial, Helvetica, sans-serif"; font-size: 18px; font-weight="bold"; text-anchor: middle; dominant-baseline: middle;} .muted {fill: #1B3450;}`}
+              </style>
+              <rect width="100%" height="100%" class="base" />
+              <rect x="10%" y="10%" height="80%" width="80%" fill="none" class="border" stroke="#3D4D5A" stroke-width="5px" />
+              <rect x="30%" height="100%" width="40%" class="base" />
+              <text x="15%" y="20%" width="100%" height="100%" class="text">
 
+                  Hello World
+
+              </text>
+            </svg>
+            </div>
             <Contract
               name="nftext"
               signer={userSigner}
@@ -518,6 +565,38 @@ function App(props) {
               blockExplorer={blockExplorer}
               contractConfig={contractConfig}
             />
+            <h2>Gallery</h2>
+
+            <Divider />
+            <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-evenly", gap: "50px", margin: "25px" }}>
+              {[...tokenIds.keys()].map((tokenId, i) => {
+                // {tokensState.map(tokensState[i] => {
+                // let tokensState[i] = await readContracts.YourContract.tokenURI(parseInt(wallet._hex));
+                // Make a new tokens state {id, uri}[]. In the refresh tokens calls, loop through all the returned walletNFTs immediately and grab the uri with await. Grabbing them one at a time and updating tokensState, gradually updating the UI.
+                // if (tokensState[i]) {
+                // }
+                return <div style={{ flex: "1 0 auto", minWidth: "250px", maxWidth: "350px" }}>{Svg(i)}</div>;
+              })}
+            </div>
+            <Divider />
+            <div style={{ margin: 8 }}>
+              <Button
+                disabled={!readContracts.nftext}
+                style={{ marginTop: 8 }}
+                onClick={async () => {
+                  let tokenIds = await readContracts.nftext.walletOfOwner(address);
+                  if (tokenIds) {
+                    if (DEBUG) console.log("tokenids: ", tokenIds);
+                    setTokenIds(tokenIds);
+                    tokenIds.forEach(tokenId => {
+                      updateTokenState(tokenId);
+                    });
+                  }
+                }}
+              >
+                Refresh
+              </Button>
+            </div>
           </Route>
           <Route path="/hints">
             <Hints

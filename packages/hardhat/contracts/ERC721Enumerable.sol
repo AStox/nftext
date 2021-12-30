@@ -69,24 +69,24 @@ abstract contract ERC721Enumerable is ERC721, IERC721Enumerable {
      *
      * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
      */
-    function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256 tokenId
-    ) internal virtual override {
-        super._beforeTokenTransfer(from, to, tokenId);
+    // function _beforeTokenTransfer(
+    //     address from,
+    //     address to,
+    //     uint256 tokenId
+    // ) internal virtual override {
+    //     super._beforeTokenTransfer(from, to, tokenId);
 
-        if (from == address(0)) {
-            _addTokenToAllTokensEnumeration(tokenId);
-        } else if (from != to) {
-            _removeTokenFromOwnerEnumeration(from, tokenId);
-        }
-        if (to == address(0)) {
-            _removeTokenFromAllTokensEnumeration(tokenId);
-        } else if (to != from) {
-            _addTokenToOwnerEnumeration(to, tokenId);
-        }
-    }
+    //     if (from == address(0)) {
+    //         _addTokenToAllTokensEnumeration(tokenId);
+    //     } else if (from != to) {
+    //         _removeTokenFromOwnerEnumeration(from, tokenId);
+    //     }
+    //     if (to == address(0)) {
+    //         _removeTokenFromAllTokensEnumeration(tokenId);
+    //     } else if (to != from) {
+    //         _addTokenToOwnerEnumeration(to, tokenId);
+    //     }
+    // }
 
     /**
      * @dev Private function to add a token to this extension's ownership-tracking data structures.

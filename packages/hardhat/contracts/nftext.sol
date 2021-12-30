@@ -3,6 +3,9 @@
 pragma solidity ^0.8.0;
 
 import "./ERC721.sol";
+import "./ERC721Enumerable.sol";
+import "./Ownable.sol";
+// import "hardhat/console.sol";
 
 library Base64 {
     string internal constant TABLE = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -38,7 +41,7 @@ library Base64 {
     }
 }
 
-contract nftext is ERC721 {
+contract nftext is ERC721Enumerable, Ownable {
     
     address private contractOwner;
     uint256 PRICE = 100;
@@ -51,41 +54,49 @@ contract nftext is ERC721 {
 
     function mint(address to, string memory text) public {
         _mint(to, tokenIdCounter);
-        // _texts[tokenIdCounter] = text;
+        _texts[tokenIdCounter] = text;
         tokenIdCounter++;
+        for (uint i; i < tokenIdCounter; i++) {
+            // console.log(_texts[i]);
+            // console.log("a");
+        }
     }
 
-    function withdraw() public payable {
+    function withdraw() public payable onlyOwner {
         (bool success, ) = payable(contractOwner).call{value: msg.value}("");
         require(success, "Could not transfer money to contractOwner");
     }
 
-    // function walletOfOwner(address _owner) public view returns (uint256[] memory) {
-    //     uint256 tokenCount = balanceOf(_owner);
-    //     if (tokenCount == 0) {
-    //         return new uint256[](0);
-    //     }
-    //     uint256[] memory tokenIds = new uint256[](tokenCount);
-    //     for (uint256 i; i < tokenCount; i++) {
-    //         tokenIds[i] = tokenOfOwnerByIndex(_owner, i);
-    //     }
-    //     return tokenIds;
-    // }
+    function walletOfOwner(address _owner) public view returns (uint256[] memory) {
+        uint256 tokenCount = balanceOf(_owner);
+        // console.log("balanceOf", tokenCount);
+        if (tokenCount == 0) {
+            return new uint256[](0);
+        }
+        uint256[] memory tokenIds = new uint256[](tokenCount);
+        for (uint256 i; i < tokenCount; i++) {
+            tokenIds[i] = tokenOfOwnerByIndex(_owner, i);
+            // console.log("tokenId", tokenIds[i]);
+        }
+        return tokenIds;
+    }
 
     function svgGenerator(uint256 tokenId) private view returns (string memory){
         string memory _svgStart = string('<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 350 350"><style>.base {fill: #0D141F; font-size: 14px;} .grey {fill: #3D4D5A;} .white {fill: #A1C2CB;} .muted {fill: #1B3450;} </style><rect width="100%" height="100%" class="base" /><text x="10" y="20" class="base"><tspan x="5" y="10" dy="22" class="white">');
         string memory _svgEnd = string('</tspan></text></svg>');
-
         return string(abi.encodePacked(_svgStart, _texts[tokenId], _svgEnd));
     }
 
     function tokenURI(uint256 tokenId) override public view returns (string memory) {
+        require(tokenIdCounter > tokenId, "Text doesn't exist");
+        // console.log("tokenID", tokenId);
+        // console.log("text", _texts[tokenId]);
         string memory svg = svgGenerator(tokenId);
         string memory _json = Base64.encode(
             bytes(
                 string(
                     abi.encodePacked(
-                    '{"image": "data:image/svg+xml;base64,', Base64.encode(bytes(svg)), ', text: ', _texts[tokenId],'"}'
+                    '{"image": "data:image/svg+xml;base64,', Base64.encode(bytes(svg)), '", "text": "', _texts[tokenId],'"}'
                     )
                 )
             )
