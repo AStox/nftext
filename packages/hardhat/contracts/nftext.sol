@@ -89,8 +89,6 @@ contract nftext is ERC721Enumerable, Ownable {
 
     function tokenURI(uint256 tokenId) override public view returns (string memory) {
         require(tokenIdCounter > tokenId, "Text doesn't exist");
-        // console.log("tokenID", tokenId);
-        // console.log("text", _texts[tokenId]);
         string memory svg = svgGenerator(tokenId);
         string memory _json = Base64.encode(
             bytes(

@@ -451,29 +451,14 @@ function App(props) {
     setTokensState(state => [...state, rawTokenURI]);
   }
 
-  const Svg = i => {
+  const Svg = () => {
+    const raw = "data:application/json;base64, eyJpbWFnZSI6ICJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFBITjJaeUI0Yld4dWN6MGlhSFIwY0RvdkwzZDNkeTUzTXk1dmNtY3ZNakF3TUM5emRtY2lJSEJ5WlhObGNuWmxRWE53WldOMFVtRjBhVzg5SW5oTmFXNVpUV2x1SUcxbFpYUWlJSFpwWlhkQ2IzZzlJaTB5TlNBdE1qVWdOREF3SURRd01DSStQSFJsZUhRK1NHVnNiRzhnZDI5eWJHUThMM1JsZUhRK1BDOXpkbWMrIn0="
     const STARTS_WITH = "data:application/json;base64,";
     const ENDS_WITH = ",text:";
-    if (tokensState.length > i) {
-      const buf = Buffer.from(tokensState[i].slice(STARTS_WITH.length), "base64");
-      let thing = window.atob(buf.toString("base64")).replace(/\s/g, "")
-      let tokenURIJSON = JSON.parse(thing.replace(/\s/g, ""));
-      return <img src={tokenURIJSON.image} />;
-    }
-    return (
-      <svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 350 350">
-        <rect height="16" width="11" fill="#0D141F">
-          <animate
-            attributeName="fill"
-            values="#0D141F;#0D141F;#CE0F5E;#CE0F5E;"
-            keyTimes="0;0.5; 0.501; 1"
-            dur="1s"
-            repeatCount="indefinite"
-            begin={`${Math.random(0, 0.5)}s`}
-          />
-        </rect>
-      </svg>
-    );
+    const buf = Buffer.from(raw.slice(STARTS_WITH.length), "base64");
+    let thing = window.atob(buf.toString("base64")).replace(/\s/g, "")
+    let tokenURIJSON = JSON.parse(thing.replace(/\s/g, ""));
+    return <img src={tokenURIJSON.image} />;
   };
 
   return (
@@ -543,7 +528,7 @@ function App(props) {
                 and give you a form to interact with it locally
             */}
             <div style={{  padding: '10px 450px'}}>
-            <svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 350 350">
+            {/* <svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 350 350">
               <style>
                 {`.base {fill: #deebee}, .border {stroke: #3D4D5A;} .text {fill: #3D4D5A; font-family="Arial, Helvetica, sans-serif"; font-size: 18px; font-weight="bold"; text-anchor: middle; dominant-baseline: middle;} .muted {fill: #1B3450;}`}
               </style>
@@ -555,10 +540,11 @@ function App(props) {
                   Hello World
 
               </text>
-            </svg>
+            </svg> */}
             </div>
+              {Svg()}
             <Contract
-              name="nftext"
+              name="MPOTelegraph"
               signer={userSigner}
               provider={localProvider}
               address={address}
