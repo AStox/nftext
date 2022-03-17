@@ -61,6 +61,7 @@ contract MPOTelegraph {
     mapping(uint256 => address) private approvedForToken;
     mapping(address => mapping(address => bool)) private approvedForAll;
     event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
+    event Mint(address indexed from, uint256 indexed tokenId, string text);
     event Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
     event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
 
@@ -112,21 +113,21 @@ contract MPOTelegraph {
 
     function tokenURI(uint256 _tokenId) public view virtual returns (string memory) {
         // string memory svg = string(generateSVG(_tokenId));
-        string memory svg = string(abi.encodePacked('<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="-25 -25 400 400"><text>', metadata[_tokenId].line1,'</text></svg>'));
-        string memory _json = Base64.encode(
-            bytes(
-                string(
-                    abi.encodePacked(
-                    '{"image": "data:image/svg+xml;base64,', Base64.encode(bytes(svg)),'"}'
-                    )
-                )
-            )
-        );
+        // string memory _json = Base64.encode(
+        //     bytes(
+        //         string(
+        //             abi.encodePacked(
+        //             '{"image": "data:image/svg+xml;base64,', Base64.encode(bytes(svg)),'"}'
+        //             )
+        //         )
+        //     )
+        // );
 
-        string memory _output = string(
-            abi.encodePacked('data:application/json;base64,', _json)
-        );
-        return _output;
+        // string memory _output = string(
+        //     abi.encodePacked('data:application/json;base64,', _json)
+        // );
+        
+        return string(abi.encodePacked("https://9amtetu7r1.execute-api.us-east-1.amazonaws.com/?id=", uint2str(_tokenId)));
     }
     // <<------------------------------------------------------- ERC721Metadata
 
@@ -141,28 +142,32 @@ contract MPOTelegraph {
 
     // Other functions ------------------------------------------------------>>
 
-    function mint(uint256 id, address to, string calldata line1, string calldata line2, string calldata line3, string calldata line4) public payable {
+    // function mint(uint256 id, address to, string calldata line1, string calldata line2, string calldata line3, string calldata line4) public payable {
+    function mint(uint256 id, address to, string calldata text) public payable {
+    // function mint(uint256 id, address to, string memory input) public payable {
         require(msg.value >= PRICE, "Send more ETH");
         require(ownership[id] == address(0), "ID already in use");
 
         ownership[id] = to;
-        metadata[id] = Telegram(msg.sender, s2b32(line1),s2b32(line2),s2b32(line3),s2b32(line4));
+        // metadata[id] = Telegram(msg.sender, s2b32(line1),s2b32(line2),s2b32(line3),s2b32(line4));
+        // metadata[id] = input;
 
         emit Transfer(address(0), to, id);
+        emit Mint(msg.sender, id, text);
     }
 
-    function reply(uint256 burnId, string calldata line1, string calldata line2, string calldata line3, string calldata line4) public {
-        require(msg.sender == ownership[burnId] || msg.sender == getApproved(burnId) || isApprovedForAll(ownership[burnId], msg.sender), "Unauthorized");
+    // function reply(uint256 burnId, string calldata line1, string calldata line2, string calldata line3, string calldata line4) public {
+    //     require(msg.sender == ownership[burnId] || msg.sender == getApproved(burnId) || isApprovedForAll(ownership[burnId], msg.sender), "Unauthorized");
 
-        emit Transfer(ownership[burnId], address(0), burnId);
-        ownership[burnId] = metadata[burnId].from;
-        emit Transfer(address(0), metadata[burnId].from, burnId);
-        metadata[burnId] = Telegram(msg.sender, s2b32(line1),s2b32(line2),s2b32(line3),s2b32(line4));
-    }
+    //     emit Transfer(ownership[burnId], address(0), burnId);
+    //     ownership[burnId] = metadata[burnId].from;
+    //     emit Transfer(address(0), metadata[burnId].from, burnId);
+    //     metadata[burnId] = Telegram(msg.sender, s2b32(line1),s2b32(line2),s2b32(line3),s2b32(line4));
+    // }
 
     // Required by etherscan.io
     function totalSupply() public view virtual returns (uint256) {
-        return 0;
+        return 1;
     }
 
     function withdraw() public payable {
@@ -170,28 +175,28 @@ contract MPOTelegraph {
         require(success, "Could not transfer money to contractOwner");
     }
 
-    function s2b32(string memory source) public pure returns (bytes32 result) {
-        bytes memory tempEmptyStringTest = bytes(source);
-        if (tempEmptyStringTest.length == 0) {
-            return 0x0;
-        }
+    // function s2b32(string memory source) public pure returns (bytes32 result) {
+    //     bytes memory tempEmptyStringTest = bytes(source);
+    //     if (tempEmptyStringTest.length == 0) {
+    //         return 0x0;
+    //     }
 
-        assembly {
-            result := mload(add(source, 32))
-        }
-    }
+    //     assembly {
+    //         result := mload(add(source, 32))
+    //     }
+    // }
 
-    function b322s(bytes32 _bytes32) public pure returns (string memory) {
-        uint8 i = 0;
-        while(i < 32 && _bytes32[i] != 0) {
-            i++;
-        }
-        bytes memory bytesArray = new bytes(i);
-        for (i = 0; i < 32 && _bytes32[i] != 0; i++) {
-            bytesArray[i] = _bytes32[i];
-        }
-        return string(bytesArray);
-    }
+    // function b322s(bytes32 _bytes32) public pure returns (string memory) {
+    //     uint8 i = 0;
+    //     while(i < 32 && _bytes32[i] != 0) {
+    //         i++;
+    //     }
+    //     bytes memory bytesArray = new bytes(i);
+    //     for (i = 0; i < 32 && _bytes32[i] != 0; i++) {
+    //         bytesArray[i] = _bytes32[i];
+    //     }
+    //     return string(bytesArray);
+    // }
 
     function uint2str(uint _i) internal pure returns (string memory _uintAsString) {
         if (_i == 0) {
@@ -215,56 +220,76 @@ contract MPOTelegraph {
         return string(bstr);
     }
 
-    function hashToString(bytes32 value) public pure returns(string memory) 
-    {
-        bytes memory alphabet = "0123456789abcdef";
+    // function toString(bytes32 x) internal pure returns (string memory) {
+    //     bytes memory s = new bytes(40);
+    //     for (uint i = 0; i < 20; i++) {
+    //         bytes1 b = bytes1(uint8(uint(x) / (2**(8*(19 - i)))));
+    //         bytes1 hi = bytes1(uint8(b) / 16);
+    //         bytes1 lo = bytes1(uint8(b) - 16 * uint8(hi));
+    //         s[2*i] = char(hi);
+    //         s[2*i+1] = char(lo);            
+    //     }
+    //     return string(s);
+    // }
 
-        bytes memory str = new bytes(51);
-        str[0] = '0';
-        str[1] = 'x';
-        for (uint256 i = 0; i < 20; i++) {
-            str[2+i*2] = alphabet[uint8(value[i + 12] >> 4)];
-            str[3+i*2] = alphabet[uint8(value[i + 12] & 0x0f)];
-        }
-        return string(str);
-    }
+    // function char(bytes1 b) internal pure returns (bytes1 c) {
+    //     if (uint8(b) < 10) return bytes1(uint8(b) + 0x30);
+    //     else return bytes1(uint8(b) + 0x57);
+    // }
 
-    function generateSVG(uint256 id) private view returns (bytes memory) {
-        bytes memory lines = abi.encodePacked(
-            b322s(metadata[id].line1),
-            '</tspan></tspan><tspan x="0" dy="20"><tspan class="muted">></tspan><tspan>',
-            b322s(metadata[id].line2),
-            '</tspan></tspan><tspan x="0" dy="20"><tspan class="muted">></tspan><tspan>',
-            b322s(metadata[id].line3),
-            '</tspan></tspan><tspan x="0" dy="20"><tspan class="muted">></tspan><tspan>',
-            b322s(metadata[id].line4)
-        );
+    // function abbrAddress(string memory addr) internal pure returns (string memory) {
+    //     bytes memory output = new bytes(12);
+    //     output[0] = bytes1("0");
+    //     output[1] = bytes1("x");
+    //     for (uint i = 0; i < 10; i++) {
+    //         if (i <= 2) {
+    //             output[i+2] = bytes(addr)[i];
+    //         }
+    //         else if (i > 2 && i < 6) {
+    //             output[i+2] = bytes1(".");
+    //         } else {
+    //             output[i+2] = bytes(addr)[20-(12-i)];
+    //         }
+    //     }
+    //     return string(output);
+    // }
 
-        bytes memory start = abi.encodePacked(
-            '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="-25 -25 400 400"><style>.text {font-family: sans-serif; fill: #B6412A; font-size: 10px;} .content{font-family: monospace; fill: #149CA5; font-size: 14px; font-weight: 700} .muted {fill: #1B3450; font-weight: 500;} .title {font-family: sans-serif; font-weight: 900; fill: #B6412A; font-size: 13px;} .metadata {font-family: monospace; fill: #0087A3; font-size: 10px; font-weight: 700} .subtitle {font-size: 18px;} .tiny {font-size: 8px } .fineprint {font-size: 6px }</style><rect x="-25" y="-25" width="425" height="425" fill="#A7C4C2" /><g transform="translate(0,50)"><rect width="350" height="250" fill="#0D141F" class="base" filter="url(#f2)" rx="4" ry="4"/><g transform="translate(80,40)"><text class="title">METAVERSAL POST OFFICE</text><line x1="17" y1="3" x2="160" y2="3" stroke="#B6412A"/><text class="title subtitle" x="35" y="20">TELEGRAPH</text></g><g transform="translate(10,18)"><text class="text" x="0" y="0">No.</text><text class="metadata" x="20" y="0">', 
-            uint2str(id),
-            '</text><line x1="17" y1="3" x2="60" y2="3" stroke="#B6412A"/></g><g transform="translate(270,18)"><text class="text" x="0" y="0">Block</text><text class="metadata" x="30" y="0">',
-            uint2str(block.number),
-            '</text><line x1="27" y1="3" x2="75" y2="3" stroke="#B6412A"/></g><g transform="translate(287,27)"><text class="text" x="0" y="5">Block Stamp</text><polygon points="0,8 0,53, 55,53, 55,8" fill="none" stroke="#1B3450" stroke-dasharray="3"/><g transform="translate(-1,4) scale(1,1)"><g transform="translate(25,25) rotate(-30)  scale(0.3,0.3)"><polygon points="0,-60 -35,0 0,20 35,0" fill="none" stroke="#0087A3" stroke-width="3px"/><polygon points="-35,0 0,20 35,0 0,-20" fill="none" stroke="#0087A3" stroke-width="3px"/><polygon points="-35,10 0,60 35,10 0,30" fill="none" stroke="#0087A3"stroke-width="3px"/></g><text class="metadata tiny"><textPath href="#stamp">',
-            hashToString(bytes32(blockhash(block.number-1)))
-        );
+    // function generateSVG(uint256 id) private view returns (bytes memory) {
+    //     bytes memory start = abi.encodePacked(
+    //         '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="-25 -25 400 400"><style>.text {font-family: sans-serif; fill: #B6412A; font-size: 10px;} .content{font-family: monospace; fill: #149CA5; font-size: 14px; font-weight: 700} .muted {fill: #1B3450; font-weight: 500;} .title {font-family: sans-serif; font-weight: 900; fill: #B6412A; font-size: 13px;} .metadata {font-family: monospace; fill: #0087A3; font-size: 10px; font-weight: 700} .subtitle {font-size: 18px;} .tiny {font-size: 8px } .fineprint {font-size: 6px }</style><rect x="-25" y="-25" width="425" height="425" fill="#A7C4C2" /><g transform="translate(0,50)"><rect width="350" height="250" fill="#0D141F" class="base" filter="url(#f2)" rx="4" ry="4"/><g transform="translate(80,40)"><text class="title">METAVERSAL POST OFFICE</text><line x1="17" y1="3" x2="160" y2="3" stroke="#B6412A"/><text class="title subtitle" x="35" y="20">TELEGRAPH</text></g><g transform="translate(10,18)"><text class="text" x="0" y="0">No.</text><text class="metadata" x="20" y="0">', 
+    //         uint2str(id),
+    //         '</text><line x1="17" y1="3" x2="60" y2="3" stroke="#B6412A"/></g><g transform="translate(270,18)"><text class="text" x="0" y="0">Block</text><text class="metadata" x="30" y="0">',
+    //         uint2str(block.number),
+    //         '</text><line x1="27" y1="3" x2="75" y2="3" stroke="#B6412A"/></g><g transform="translate(287,27)"><text class="text" x="0" y="5">Block Stamp</text><polygon points="0,8 0,53, 55,53, 55,8" fill="none" stroke="#1B3450" stroke-dasharray="3"/><g transform="translate(-1,4) scale(1,1)"><g transform="translate(25,25) rotate(-30)  scale(0.3,0.3)"><polygon points="0,-60 -35,0 0,20 35,0" fill="none" stroke="#0087A3" stroke-width="3px"/><polygon points="-35,0 0,20 35,0 0,-20" fill="none" stroke="#0087A3" stroke-width="3px"/><polygon points="-35,10 0,60 35,10 0,30" fill="none" stroke="#0087A3" stroke-width="3px"/></g><text class="metadata tiny"><textPath href="#stamp">',
+    //         toString(bytes32(blockhash(block.number-1)))
+    //     );
 
-        bytes memory middle = abi.encodePacked(
-            '</textPath><animateTransform attributeType="XML" attributeName="transform" type="rotate" from="0 25 25" to="360 25 25"  dur="10s" repeatCount="indefinite" /></text><path fill="none" d="M -2,25 A 27 27 0 1 0 -2,24.5 z" stroke="#0087A3" stroke-width="1" /></g></g><g transform="translate(0,100)"><g transform="translate(10,-10)"><text class="text" x="0" y="0">From</text><text class="metadata" x="28" y="0">',
-            hashToString(bytes32(uint256(uint160(metadata[id].from)))),
-            '</text><line x1="25" y1="3" x2="110" y2="3" stroke="#B6412A"/></g><g transform="translate(240,-10)"><text class="text" x="0" y="0">To</text><text class="metadata" x="15" y="0">',
-            hashToString(bytes32(uint256(uint160(ownership[id])))),
-            '</text><line x1="12" y1="3" x2="100" y2="3" stroke="#B6412A"/></g><g transform="translate(0,0)"><line x1="5" y1="0" x2="345" y2="0" stroke="#B6412A"/><line x1="40" y1="0" x2="40" y2="145" stroke="#B6412A"/><g transform="translate(55,20)"><text class="text content" x="0" y="-20"><tspan x="0" dy="20"><tspan class="muted">></tspan><tspan>'
-        );
+    //     bytes memory middle = abi.encodePacked(
+    //         '</textPath><animateTransform attributeType="XML" attributeName="transform" type="rotate" from="0 25 25" to="360 25 25"  dur="10s" repeatCount="indefinite" /></text><path fill="none" d="M -2,25 A 27 27 0 1 0 -2,24.5 z" stroke="#0087A3" stroke-width="1" /></g></g><g transform="translate(0,100)"><g transform="translate(10,-10)"><text class="text" x="0" y="0">From</text><text class="metadata" x="28" y="0">',
+    //         abbrAddress(toString(bytes32(uint256(uint160(metadata[id].from))))),
+    //         '</text><line x1="25" y1="3" x2="110" y2="3" stroke="#B6412A"/></g><g transform="translate(240,-10)"><text class="text" x="0" y="0">To</text><text class="metadata" x="15" y="0">',
+    //         abbrAddress(toString(bytes32(uint256(uint160(ownership[id]))))),
+    //         '</text><line x1="12" y1="3" x2="100" y2="3" stroke="#B6412A"/></g><g transform="translate(0,0)"><line x1="5" y1="0" x2="345" y2="0" stroke="#B6412A"/><line x1="40" y1="0" x2="40" y2="145" stroke="#B6412A"/><g transform="translate(55,20)"><text class="text content" x="0" y="-20"><tspan x="0" dy="20"><tspan class="muted">></tspan><tspan>'
+    //     );
 
-        return abi.encodePacked(
-            start,
-            middle,
-            lines,
-            '</tspan></tspan></text><g transform="translate(0,119)"><text class="text fineprint" x="0" y="0">FOR ONE FREE RESPONSE TO THIS TELEGRAM, VISIT THE METAVERAL POST OFFICE OR</text><text class="text fineprint" x="0" y="6">WWW.METAVERSALPOST.IO WITH THE WALLET OWNING THIS NON-FUNGIBLE TELEGRAM.</text></g></g></g></g></g><defs><path id="stamp" fill="none" d="M 0,25 A 25 25 0 1 0 0,24.99 z" /><filter id="f2" x="-0.1" y="-0.1" width="200%" height="200%"><feOffset result="offOut" in="SourceAlpha" dx="0" dy="0" /><feGaussianBlur result="blurOut" in="offOut" stdDeviation="10" /><feBlend in="SourceGraphic" in2="blurOut" mode="normal" /></filter></defs></svg>'
-        );
+    //     bytes memory lines = abi.encodePacked(
+    //         b322s(metadata[id].line1),
+    //         '</tspan></tspan><tspan x="0" dy="20"><tspan class="muted">></tspan><tspan>',
+    //         b322s(metadata[id].line2),
+    //         '</tspan></tspan><tspan x="0" dy="20"><tspan class="muted">></tspan><tspan>',
+    //         b322s(metadata[id].line3),
+    //         '</tspan></tspan><tspan x="0" dy="20"><tspan class="muted">></tspan><tspan>',
+    //         b322s(metadata[id].line4)
+    //     );
 
-    }
+    //     return abi.encodePacked(
+    //         start,
+    //         middle,
+    //         lines,
+    //         '</tspan></tspan></text><g transform="translate(0,119)"><text class="text fineprint" x="0" y="0">FOR ONE FREE RESPONSE TO THIS TELEGRAM, VISIT THE METAVERAL POST OFFICE OR</text><text class="text fineprint" x="0" y="6">WWW.METAVERSALPOST.IO WITH THE WALLET OWNING THIS NON-FUNGIBLE TELEGRAM.</text></g></g></g></g></g><defs><path id="stamp" fill="none" d="M 0,25 A 25 25 0 1 0 0,24.99 z" /><filter id="f2" x="-0.1" y="-0.1" width="200%" height="200%"><feOffset result="offOut" in="SourceAlpha" dx="0" dy="0" /><feGaussianBlur result="blurOut" in="offOut" stdDeviation="10" /><feBlend in="SourceGraphic" in2="blurOut" mode="normal" /></filter></defs></svg>'
+    //     );
+
+    // }
 
     // <<----------------------------------------------------- Other functions
 }
